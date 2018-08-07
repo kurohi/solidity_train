@@ -9,7 +9,8 @@ class App extends Component {
         manager: '',
         players: [],
         balance: '',
-        value: ''
+        value: '',
+        message: ''
     };
 
     async componentDidMount(){
@@ -18,6 +19,27 @@ class App extends Component {
         const balance = await web3.eth.getBalance(lottery.options.address);
         this.setState({manager, players, balance});
     }
+
+    onSubmit = async (event) => {
+        event.preventDefault();
+
+        const accounts = await web3.eth.getAccounts();
+        this.setState({message: "Waiting for block confirmation..."});
+        await lottery.methods.enter().send({
+            from:accounts[0],
+            value:web3.utils.toWei(this.state.value, 'ether')
+        });
+        this.setState({message: "Block confirmed. You are now participating."});
+    }
+
+    onClick = async () => {
+        const accounts = await web3.eth.getAccounts();
+
+        this.setState({message: 'Waiting for block confirmation...'});
+        await lottery.methods.pickWinner().send({from: accounts[0]});
+        this.setState({message: 'A winner has been picked'});
+    }
+
     render() {
         return (
             <div className="App">
@@ -25,14 +47,20 @@ class App extends Component {
                 <p>This contract is managed by {this.state.manager} </p>
                 <p>There are currently {this.state.players.length} players competing to win {web3.utils.fromWei(this.state.balance)} ether. </p>
             <hr />
-            <form>
+            <form onSubmit={this.onSubmit}>
                 <h4>With how much do you want to try?</h4>
                 <div>
                     <label>Amount of ether to enter </label>
                     <input value={this.state.value} onChange={event => this.setState({value: event.target.value})}/>
                 </div>
+                <br /> <br />
                 <button>Enter</button>
             </form>
+            <hr />
+            <h4> Ready to pick a winner? </h4>
+            <button onClick={this.onClick}> Pick a winner! </button>
+            <hr />
+            <h1>{this.state.message}</h1>
             </div>
         );
     }
