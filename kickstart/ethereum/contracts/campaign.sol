@@ -10,7 +10,7 @@ contract CampaignFactory {
         deployed_campaigns.push(new Campaign(min_contrib, min_approver, msg.sender));
     }
     
-    function getDeplyedCampaigns() public view returns(address[]){
+    function getDeployedCampaigns() public view returns(address[]){
         return deployed_campaigns;
     }
 }
@@ -26,7 +26,7 @@ contract Campaign {
     }
     address public manager;
     mapping(address=>bool) private approvers;
-    uint approvers_count;
+    uint public approvers_count;
     address[] private bankers_list;
     mapping(address=>uint) private contribution;
     uint public min_contribution;
@@ -50,16 +50,18 @@ contract Campaign {
         contribution[msg.sender] = msg.value;
     }
     
-    function getContributors() public view returns(address[]){
-        require(msg.sender == manager);
+    function getContributors() public view restricted returns(address[]){
         return bankers_list;
     }
-    
-    function getContributions(address contributor) public view returns(uint) {
-        require(msg.sender == manager);
-        return contribution[contributor];
+
+    function isApprover(address requester) public view restricted returns(bool){
+	return approvers[requester];
     }
     
+    function getContributions(address contributor) public view restricted returns(uint) {
+        return contribution[contributor];
+    }
+
     function createRequest(string description, uint value, address recipient) public restricted {
         Request memory new_request = Request({
             description: description, 
@@ -84,7 +86,7 @@ contract Campaign {
         target_request.has_voted[msg.sender] = true;
     }
     
-    function finalizaRequest(uint request_index) public restricted {
+    function finalizeRequest(uint request_index) public restricted {
         require(request_index < requests.length);
         Request storage target_request = requests[request_index];
         require(!target_request.complete);
