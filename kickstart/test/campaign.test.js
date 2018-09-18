@@ -75,17 +75,17 @@ describe('Campaigns', () => {
         }catch (err){
             assert(true);
         }
-        await campaign.methods.createRequest('test request', '100', accounts[0])
+        await campaign.methods.createRequest('test request', '100000', accounts[1])
             .send({from:accounts[0], gas:'1000000'});
-        await campaign.methods.createRequest('test request2', '101', accounts[0])
+        await campaign.methods.createRequest('test request2', '100001', accounts[1])
             .send({from:accounts[0], gas:'1000000'});
         const request = await campaign.methods.requests(0).call();
-        assert.equal(request.value, 100);
+        assert.equal(request.value, 100000);
 
         //adding approvers and approving requests
         for(i=1; i<9; i++){
             await campaign.methods.contribute()
-                .send({from:accounts[i], value:'1000', gas:'1000000'});
+                .send({from:accounts[i], value:'100000', gas:'1000000'});
             if(i<7){
                 await campaign.methods.approveRequest(0)
                     .send({from:accounts[i], gas:'1000000'});
@@ -98,7 +98,7 @@ describe('Campaigns', () => {
 
         //trying to approve without being an approver
         await campaign.methods.contribute()
-            .send({from:accounts[9], value:'1000', gas:'1000000'});
+            .send({from:accounts[9], value:'11', gas:'1000000'});
         try{
             await campaign.methods.approveRequest(0)
                 .send({from:accounts[9], gas:'1000000'});
@@ -106,6 +106,10 @@ describe('Campaigns', () => {
         }catch (err){
             assert(err);
         }
+
+        //getting balance before finalizing
+        let balance_old = await web3.eth.getBalance(accounts[1]);
+        balance_old = parseFloat(balance_old);
 
         //finalizing request
         await campaign.methods.finalizeRequest(0)
@@ -134,6 +138,12 @@ describe('Campaigns', () => {
         }catch(err){
             assert(true);
         }
+
+
+        //getting balance after finalizing
+        let balance_new = await web3.eth.getBalance(accounts[1]);
+        balance_new = parseFloat(balance_new);
+        assert(balance_new>balance_old);
 
     });
 
